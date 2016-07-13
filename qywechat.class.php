@@ -81,18 +81,19 @@ class Wechat
 	const OAUTH_PREFIX 			= 'https://open.weixin.qq.com/connect/oauth2';
 	const OAUTH_AUTHORIZE_URL 	= '/authorize?';
 
-	private $token;
-	private $encodingAesKey;
-	private $appid;         //也就是企业号的CorpID
-	private $appsecret;
-	private $access_token;
-    private $agentid;       //应用id   AgentID
-	private $postxml;
-    private $agentidxml;    //接收的应用id   AgentID
-	private $_msg;
-	private $_receive;
-	private $_sendmsg;      //主动发送消息的内容
-	private $_text_filter = true;
+    protected $token;
+    protected $encodingAesKey;
+    protected $appid;         //也就是企业号的CorpID
+    protected $appsecret;
+    protected $access_token;
+    protected $agentid;       //应用id   AgentID
+    protected $postxml;
+    protected $agentidxml;    //接收的应用id   AgentID
+    protected $_msg;
+    protected $_receive;
+    protected $_sendmsg;      //主动发送消息的内容
+    protected $_text_filter = true;
+
 	public $debug =  false;
 	public $errCode = 40001;
 	public $errMsg = "no access";
@@ -218,7 +219,7 @@ class Wechat
 	 * @param string $text
 	 * @return string|mixed
 	 */
-	private function _auto_text_filter($text) {
+	protected function _auto_text_filter($text) {
 	    if (!$this->_text_filter) return $text;
 	    return str_replace("\r\n", "\n", $text);
 	}
@@ -227,7 +228,7 @@ class Wechat
 	 * GET 请求
 	 * @param string $url
 	 */
-	private function http_get($url){
+	protected function http_get($url){
 	    $oCurl = curl_init();
 	    if(stripos($url,"https://")!==FALSE){
 	        curl_setopt($oCurl, CURLOPT_SSL_VERIFYPEER, FALSE);
@@ -253,7 +254,7 @@ class Wechat
 	 * @param boolean $post_file 是否文件上传
 	 * @return string content
 	 */
-	private function http_post($url,$param,$post_file=false){
+	protected function http_post($url,$param,$post_file=false){
 		$oCurl = curl_init();
 		if(stripos($url,"https://")!==FALSE){
 			curl_setopt($oCurl, CURLOPT_SSL_VERIFYPEER, FALSE);
@@ -286,7 +287,7 @@ class Wechat
 	/**
 	 * For weixin server validation
 	 */
-	private function checkSignature($str)
+	protected function checkSignature($str)
 	{
 	    $signature = isset($_GET["msg_signature"])?$_GET["msg_signature"]:'';
 	    $timestamp = isset($_GET["timestamp"])?$_GET["timestamp"]:'';
@@ -820,7 +821,7 @@ class Wechat
 		    return false;
 	}
 
-	private function generate($encrypt, $signature, $timestamp, $nonce)
+	protected function generate($encrypt, $signature, $timestamp, $nonce)
 	{
 	    //格式化加密信息
 	    $format = "<xml>
