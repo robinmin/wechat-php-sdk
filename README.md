@@ -8,3 +8,5 @@ wechat-php-sdk
 - 文件[qywechat.class.php](https://github.com/robinmin/wechat-php-sdk/qywechat.class.php)
 中的函数`getUserId`实现错误予以修正--起始在修改了上一条的变量可访问性以后，本条已经可以在子类里面来重载了。
 
+本项目的修改原则是尽量不动原来的代码，以便将来可替换。
+
