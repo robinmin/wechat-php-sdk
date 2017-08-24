@@ -215,36 +215,6 @@ class Wechat
     }
 
     /**
-     * json_decode : decode the result from wechat servers' response
-     * @param  string $result response result
-     * @return mixed         decoded response data or false when failed
-     */
-    protected function json_decode($result) {
-        if (empty($result)) {
-            return false;
-        }
-
-        $json = @json_decode($result, true);
-        if (!is_array($json)) {
-            // only avaliable for wechar response because wechat will always
-            //  return an object instead of any other type
-
-            $this->errCode = 40002;
-            $this->errMsg = ErrorCode::getErrText(strval($this->errCode));
-
-            return false;
-        }
-
-        if (array_key_exists('errcode', $json) && $json['errcode'] !== 0) {
-            $this->errCode = $json['errcode'];
-            $this->errMsg = isset($json['errmsg']) ? $json['errmsg'] : '';
-            return false;
-        }
-
-        return $json;
-    }
-
-    /**
      * 过滤文字回复\r\n换行符
      * @param string $text
      * @return string|mixed
@@ -896,6 +866,36 @@ class Wechat
     }
 
     /**
+     * decode_result : decode the result from wechat servers' response
+     * @param  string $result response result
+     * @return mixed         decoded response data or false when failed
+     */
+    protected function decode_result($result) {
+        if (empty($result)) {
+            return false;
+        }
+
+        $json = @json_decode($result, true);
+        if (!is_array($json)) {
+            // only avaliable for wechar response because wechat will always
+            //  return an object instead of any other type
+
+            $this->errCode = 40002;
+            $this->errMsg = ErrorCode::getErrText(strval($this->errCode));
+
+            return false;
+        }
+
+        if (array_key_exists('errcode', $json) && $json['errcode'] !== 0) {
+            $this->errCode = $json['errcode'];
+            $this->errMsg = isset($json['errmsg']) ? $json['errmsg'] : '';
+            return false;
+        }
+
+        return $json;
+    }
+
+    /**
      * 通用auth验证方法
      * @param string $appid
      * @param string $appsecret
@@ -918,7 +918,7 @@ class Wechat
         }
 
         $result = $this->http_get(self::API_URL_PREFIX.self::TOKEN_GET_URL.'corpid='.$appid.'&corpsecret='.$appsecret);
-        $json = $this->json_decode($result);
+        $json = $this->decode_result($result);
         if ($json) {
             $this->access_token = $json['access_token'];
             $expire = $json['expires_in'] ? intval($json['expires_in'])-100 : 3600;
@@ -970,7 +970,7 @@ class Wechat
             return $rs;
         }
         $result = $this->http_get(self::API_URL_PREFIX.self::TICKET_GET_URL.'access_token='.$this->access_token);
-        $json = $this->json_decode($result);
+        $json = $this->decode_result($result);
         if ($json) {
             $this->jsapi_ticket = $json['ticket'];
             $expire = $json['expires_in'] ? intval($json['expires_in'])-100 : 3600;
@@ -1113,7 +1113,7 @@ class Wechat
         }
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_post(self::API_URL_PREFIX.self::MENU_CREATE_URL.'access_token='.$this->access_token.'&agentid='.$agentid,self::json_encode($data));
-        $json = $this->json_decode($result);
+        $json = $this->decode_result($result);
         return !empty($json);
     }
 
@@ -1127,7 +1127,7 @@ class Wechat
         }
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_get(self::API_URL_PREFIX.self::MENU_GET_URL.'access_token='.$this->access_token.'&agentid='.$agentid);
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1140,7 +1140,7 @@ class Wechat
         }
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_get(self::API_URL_PREFIX.self::MENU_DELETE_URL.'access_token='.$this->access_token.'&agentid='.$agentid);
-        $json = $this->json_decode($result);
+        $json = $this->decode_result($result);
         return !empty($json);
     }
 
@@ -1160,7 +1160,7 @@ class Wechat
     public function uploadMedia($data, $type){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_post(self::API_URL_PREFIX.self::MEDIA_UPLOAD_URL.'access_token='.$this->access_token.'&type='.$type,$data,true);
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1171,7 +1171,7 @@ class Wechat
     public function getMedia($media_id){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_get(self::API_URL_PREFIX.self::MEDIA_GET_URL.'access_token='.$this->access_token.'&media_id='.$media_id);
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1181,7 +1181,7 @@ class Wechat
     public function getServerIp(){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_get(self::API_URL_PREFIX.self::CALLBACKSERVER_GET_URL.'access_token='.$this->access_token);
-        $json = $this->json_decode($result);
+        $json = $this->decode_result($result);
         if ($json) {
             return $json['ip_list'];
         }
@@ -1207,7 +1207,7 @@ class Wechat
     public function createDepartment($data){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_post(self::API_URL_PREFIX.self::DEPARTMENT_CREATE_URL.'access_token='.$this->access_token,self::json_encode($data));
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
 
@@ -1229,7 +1229,7 @@ class Wechat
     public function updateDepartment($data){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_post(self::API_URL_PREFIX.self::DEPARTMENT_UPDATE_URL.'access_token='.$this->access_token,self::json_encode($data));
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1244,7 +1244,7 @@ class Wechat
     public function deleteDepartment($id){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_get(self::API_URL_PREFIX.self::DEPARTMENT_DELETE_URL.'access_token='.$this->access_token.'&id='.$id);
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1264,7 +1264,7 @@ class Wechat
     public function moveDepartment($data){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_post(self::API_URL_PREFIX.self::DEPARTMENT_MOVE_URL.'access_token='.$this->access_token,self::json_encode($data));
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1292,7 +1292,7 @@ class Wechat
     public function getDepartment(){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_get(self::API_URL_PREFIX.self::DEPARTMENT_LIST_URL.'access_token='.$this->access_token);
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1319,7 +1319,7 @@ class Wechat
     public function createUser($data){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_post(self::API_URL_PREFIX.self::USER_CREATE_URL.'access_token='.$this->access_token,self::json_encode($data));
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1345,7 +1345,7 @@ class Wechat
     public function updateUser($data){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_post(self::API_URL_PREFIX.self::USER_UPDATE_URL.'access_token='.$this->access_token,self::json_encode($data));
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1360,7 +1360,7 @@ class Wechat
     public function deleteUser($userid){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_get(self::API_URL_PREFIX.self::USER_DELETE_URL.'access_token='.$this->access_token.'&userid='.$userid);
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1382,7 +1382,7 @@ class Wechat
         $data = array('useridlist'=>$userids);
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_post(self::API_URL_PREFIX.self::USER_BATCHDELETE_URL.'access_token='.$this->access_token,self::json_encode($data));
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1409,7 +1409,7 @@ class Wechat
     public function getUserInfo($userid){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_get(self::API_URL_PREFIX.self::USER_GET_URL.'access_token='.$this->access_token.'&userid='.$userid);
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1433,7 +1433,7 @@ class Wechat
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_get(self::API_URL_PREFIX.self::USER_LIST_URL.'access_token='.$this->access_token
                 .'&department_id='.$department_id.'&fetch_child='.$fetch_child.'&status='.$status);
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1467,7 +1467,7 @@ class Wechat
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_get(self::API_URL_PREFIX.self::USER_LIST_INFO_URL.'access_token='.$this->access_token
                 .'&department_id='.$department_id.'&fetch_child='.$fetch_child.'&status='.$status);
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1490,7 +1490,7 @@ class Wechat
             return false;
         }
         $result = $this->http_get(self::API_URL_PREFIX.self::USER_GETINFO_URL.'access_token='.$this->access_token.'&code='.$code.'&agentid='.$agentid);
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1513,7 +1513,7 @@ class Wechat
         }
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_post(self::API_URL_PREFIX.self::USER_INVITE_URL.'access_token='.$this->access_token,self::json_encode($data));
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1533,7 +1533,7 @@ class Wechat
     public function createTag($data){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_post(self::API_URL_PREFIX.self::TAG_CREATE_URL.'access_token='.$this->access_token,self::json_encode($data));
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1552,7 +1552,7 @@ class Wechat
     public function updateTag($data){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_post(self::API_URL_PREFIX.self::TAG_UPDATE_URL.'access_token='.$this->access_token,self::json_encode($data));
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1567,7 +1567,7 @@ class Wechat
     public function deleteTag($tagid){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_get(self::API_URL_PREFIX.self::TAG_DELETE_URL.'access_token='.$this->access_token.'&tagid='.$tagid);
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1588,7 +1588,7 @@ class Wechat
     public function getTag($tagid){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_get(self::API_URL_PREFIX.self::TAG_GET_URL.'access_token='.$this->access_token.'&tagid='.$tagid);
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1612,7 +1612,7 @@ class Wechat
     public function addTagUser($data){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_post(self::API_URL_PREFIX.self::TAG_ADDUSER_URL.'access_token='.$this->access_token,self::json_encode($data));
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1636,7 +1636,7 @@ class Wechat
     public function delTagUser($data){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_post(self::API_URL_PREFIX.self::TAG_DELUSER_URL.'access_token='.$this->access_token,self::json_encode($data));
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1654,7 +1654,7 @@ class Wechat
     public function getTagList(){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_get(self::API_URL_PREFIX.self::TAG_LIST_URL.'access_token='.$this->access_token);
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1732,7 +1732,7 @@ class Wechat
     public function sendMessage($data){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_post(self::API_URL_PREFIX.self::MASS_SEND_URL.'access_token='.$this->access_token,self::json_encode($data));
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
@@ -1752,7 +1752,7 @@ class Wechat
     public function authSucc($userid){
         if (!$this->access_token && !$this->checkAuth()) return false;
         $result = $this->http_get(self::API_URL_PREFIX.self::AUTHSUCC_URL.'access_token='.$this->access_token.'&userid='.$userid);
-        return $this->json_decode($result);
+        return $this->decode_result($result);
     }
 
     /**
